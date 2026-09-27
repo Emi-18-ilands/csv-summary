@@ -87,15 +87,6 @@ def _pick_delimiter(first_line):
     return best if counts[best] else ","
 
 
-def _parse_rows(block_lines, delimiter):
-    reader = csv.reader(io.StringIO("\n".join(block_lines)), delimiter=delimiter)
-    rows = [r for r in reader]
-    # drop trailing fully-empty rows
-    while rows and all(c == "" for c in rows[-1]):
-        rows.pop()
-    return rows
-
-
 def _split_into_blocks(text, delimiter):
     """Return (start_line, end_line, rows) blocks split on blank rows.
 
@@ -244,7 +235,6 @@ def _extract_tables(text, header_mode, max_top):
             continue
 
         header = None
-        want_header = {}
         if header_mode in ("auto", "always"):
             if _looks_like_header(rows[0], ncols, rows[1:]):
                 header = [c.strip() for c in rows[0]]
@@ -298,9 +288,8 @@ def _render_text(path, tables, max_top):
                       if t["ragged_rows"] else ""))
         widths = [max(len(c["name"]), 6) for c in t["columns"]]
         namew = max(widths) if widths else 6
-        head_fmt = "  %-*s  %-8s %8s %7s %7s  %s" % (
-            namew, "column", "type", "non-null", "nulls", "unique", "summary")
-        out.append(head_fmt)
+        out.append("  %-*s  %-8s %8s %7s %7s  %s" % (
+            namew, "column", "type", "non-null", "nulls", "unique", "summary"))
         for c in t["columns"]:
             out.append("  %-*s  %-8s %8d %7d %7d  %s" % (
                 namew, c["name"], c["type"], c["non_null"], c["nulls"],
@@ -388,10 +377,7 @@ def main(argv=None):
 
     chunks = []
     for path in targets:
-        if args.json:
-            chunks.append(_process(path, args))
-        else:
-            chunks.append(_process(path, args))
+        chunks.append(_process(path, args))
     print("\n\n".join(chunks))
     return 0
 
